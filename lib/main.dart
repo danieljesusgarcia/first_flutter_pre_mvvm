@@ -1,4 +1,5 @@
-import 'package:english_words/english_words.dart';
+import 'package:first_flutter/data/models/sentence.dart';
+import 'package:first_flutter/presentation/viewmodels/sentence_vm.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,7 +13,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => MyAppState(),
+      create: (context) => SentenceVM(),
       child: MaterialApp(
         title: 'Namer App',
         theme: ThemeData(
@@ -24,37 +25,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyAppState extends ChangeNotifier {
-  var current = WordPair.random();
-
-  void getNext() {
-    // Add the current word pair to the history list before changing it.
-    history.insert(0, current);
-
-    current = WordPair.random();
-    notifyListeners();
-  }
-
-  // ↓ Add the code below.
-  var favorites = <WordPair>[];
-
-  // History of all generated word pairs.
-  var history = <WordPair>[];
-
-  void toggleFavorite(WordPair pair) {
-    if (favorites.contains(pair)) {
-      favorites.remove(pair);
-    } else {
-      favorites.add(pair);
-    }
-    notifyListeners();
-  }
-  void toggleCurrentFavorite() {
-    toggleFavorite(current);
-  }
-
-
-}
 
 class MyHomePage extends StatefulWidget {
   @override
@@ -155,12 +125,12 @@ class MainArea extends StatelessWidget {
 class GeneratorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
-    var pair = appState.current;
+    var vm = context.watch<SentenceVM>();
+    var pair = vm.current;
 
     // ↓ Add this.
     IconData icon;
-    if (appState.favorites.contains(pair)) {
+    if (vm.favorites.contains(pair)) {
       icon = Icons.favorite;
     } else {
       icon = Icons.favorite_border;
@@ -174,14 +144,14 @@ class GeneratorPage extends StatelessWidget {
           Expanded(
             child: ListView(
               children: [
-                for (var word in appState.history)
+                for (var word in vm.history)
                   ListTile(
                     leading: Icon(
-                      appState.favorites.contains(word)
+                      vm.favorites.contains(word)
                           ? Icons.favorite
                           : Icons.favorite_border,
                     ),
-                    title: Text(word.asString),
+                    title: Text(word.text),
                   ),
               ],
             ),
@@ -195,7 +165,7 @@ class GeneratorPage extends StatelessWidget {
             children: [
               ElevatedButton.icon(
                 onPressed: () {
-                  appState.toggleCurrentFavorite();
+                  vm.toggleCurrentFavorite();
                 },
                 icon: Icon(icon),
                 label: Text('Like'),
@@ -203,7 +173,7 @@ class GeneratorPage extends StatelessWidget {
               SizedBox(width: 20), // ← Add some spacing between buttons.
               ElevatedButton(
                 onPressed: () {
-                  appState.getNext();
+                  vm.next();
                 },
                 child: Text('Next'),
               ),
@@ -219,9 +189,9 @@ class GeneratorPage extends StatelessWidget {
 class FavoritesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var vm = context.watch<SentenceVM>();
 
-    if (appState.favorites.isEmpty) {
+    if (vm.favorites.isEmpty) {
       return Center(child: Text('No favorites yet.'));
     }
     return ListView(
@@ -230,20 +200,20 @@ class FavoritesPage extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: Text(
             'You have '
-            '${appState.favorites.length} favorites:',
+            '${vm.favorites.length} favorites:',
           ),
         ),
-        for (var word in appState.favorites)
+        for (var word in vm.favorites)
           ListTile(
             leading: IconButton(
               icon: Icon(Icons.favorite),
               color: Theme.of(context).colorScheme.primary,
               onPressed: () {
-                appState.toggleFavorite(word);
+                vm.toggleFavorite(word);
               },
               tooltip: 'Remove from favorites',
             ),
-            title: Text(word.asString),
+            title: Text(word.text),
           ),
       ],
     );
@@ -253,7 +223,7 @@ class FavoritesPage extends StatelessWidget {
 class BigCard extends StatelessWidget {
   const BigCard({super.key, required this.pair});
 
-  final WordPair pair;
+  final Sentence pair;
 
   @override
   Widget build(BuildContext context) {
@@ -269,7 +239,7 @@ class BigCard extends StatelessWidget {
       elevation: 5,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Text(pair.asLowerCase, style: style),
+        child: Text(pair.text, style: style),
       ),
     );
   }
